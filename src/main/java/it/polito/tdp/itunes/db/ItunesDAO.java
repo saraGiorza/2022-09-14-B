@@ -139,4 +139,79 @@ public class ItunesDAO {
 		}
 		return result;
 	}
+	
+	public List<Album> getAllAlbumsDurata(double soglia){
+		final String sql = "SELECT a.AlbumId, a.Title, a.ArtistId, AVG(t.Milliseconds) AS durata "
+				+ "FROM album a, track t "
+				+ "WHERE a.AlbumId = t.AlbumId "
+				+ "GROUP BY(a.AlbumId)";
+		List<Album> result = new LinkedList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				if(res.getDouble("durata") > soglia) {
+					result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), res.getDouble("durata")));					
+				}
+				
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
+	
+	public List<Integer> playlistAlbum(Album a){
+		final String sql = "SELECT DISTINCT  PlaylistId "
+				+ "FROM playlisttrack pt, track t "
+				+ "WHERE pt.TrackId = t.TrackId AND t.AlbumId = ?";
+		List<Integer> result = new LinkedList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, a.getAlbumId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+					result.add(res.getInt("PlaylistId"));					
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
+	
+	public List<Track> getTracksAlbum(Album a){
+		final String sql = "SELECT * "
+				+ "FROM track "
+				+ "WHERE AlbumId = ?";
+		List<Track> result = new ArrayList<Track>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, a.getAlbumId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new Track(res.getInt("TrackId"), res.getString("Name"), 
+						res.getString("Composer"), res.getInt("Milliseconds"), 
+						res.getInt("Bytes"),res.getDouble("UnitPrice")));
+			
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
 }
